@@ -7,9 +7,15 @@
   --transition: all 0.3s ease;
 }
 
-/* Prevent horizontal scrolling */
-html, body {
-  overflow-x: hidden;
+/* Set up a stable scrolling context */
+html {
+  height: 100%; /* Base height for the document */
+  scroll-behavior: smooth; /* Opzionale: rende lo scroll dei link #ancora più fluido */
+}
+
+body {
+  min-height: 100%; /* Allows body to grow beyond viewport height */
+  overflow-x: hidden; /* Prevent horizontal scrolling on the body */
 }
 
 /* Reset and Global Defaults */
@@ -155,6 +161,7 @@ h1 {
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
 }
 
 .hero::after {
@@ -431,6 +438,7 @@ h1 {
 }
 
 .about-text p {
+  color: white;
   margin-bottom: 1.5rem;
   font-size: 1.1rem;
   line-height: 1.8;
@@ -709,7 +717,7 @@ h1 {
 /* Detail Page Styles */
 .detail-container {
   max-width: 1200px;
-  margin: 4rem auto;
+  margin: 0 auto;
   padding: 2rem;
   padding-top: 6rem;
   background: white;
@@ -722,6 +730,7 @@ h1 {
 
 .back-link {
   display: inline-block;
+  margin-top: 2rem;
   margin-bottom: 2rem;
   color: var(--color-dark-gray);
   text-decoration: none;
@@ -1093,6 +1102,7 @@ body.lightbox-active > *:not(.lightbox-overlay) {
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
 }
 .article-image-container img {
   width: 100%;
@@ -1102,7 +1112,7 @@ body.lightbox-active > *:not(.lightbox-overlay) {
   transition: transform 0.3s;
 }
 .article-card:hover .article-image-container img {
-  transform: scale(1.06);
+  transform: none;
 }
 .article-info {
   flex: 1;
@@ -1133,13 +1143,16 @@ body.lightbox-active > *:not(.lightbox-overlay) {
   font-size: 1rem;
   font-family: inherit;
   cursor: pointer;
-  transition: background 0.2s;
+  transition: background 0.2s, color 0.2s, transform 0.2s;
   box-shadow: 0 2px 8px rgba(212,175,55,0.08);
   font-weight: 600;
   letter-spacing: 0.5px;
+  text-decoration: none;
 }
 .article-btn:hover {
   background: #bfa13a;
+  color: #fff;
+  transform: scale(1.08);
 }
 @media (max-width: 900px) {
   .article-card {
@@ -1199,4 +1212,35 @@ body.lightbox-active > *:not(.lightbox-overlay) {
 }
 .article-flex-row-wide .watch-story {
   max-width: 1000px;
+}
+
+.article-image-container .hover-image {
+  opacity: 0;
+  transition: opacity 0.6s;
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  object-fit: cover;
+}
+.article-card:hover .article-image-container .hover-image {
+  opacity: 1;
+  transition: opacity 0.6s;
+}
+.article-card:hover .article-image-container .main-image {
+  opacity: 0;
+  transition: opacity 0.6s;
+}
+
+/* Rimuovo l'animazione di scale dall'immagine in hover della card */
+.article-card:hover .article-image-container img {
+  transform: none;
+}
+
+/* Animazione solo sul testo del bottone Read More */
+.article-btn {
+  transition: background 0.2s, color 0.2s, transform 0.2s;
+}
+.article-btn:hover {
+  background: #bfa13a;
+  color: #fff;
+  transform: scale(1.08);
 }
