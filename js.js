@@ -9,30 +9,107 @@ document.addEventListener('DOMContentLoaded', () => {
     mobileMenuToggle.addEventListener('click', () => {
       navContent.classList.toggle('active');
     });
-
     navLinks.addEventListener('click', () => {
       navContent.classList.remove('active');
     });
   }
-
-  // --- 2. Portfolio Tabs ---
+  
+  // --- 2. Portfolio Tabs & Slider ---
   const tabs = document.querySelectorAll(".portfolio-tab");
-  const portfolioGrids = document.querySelectorAll(".portfolio-grid[data-tab-content]");
+  const sliderContainer = document.querySelector('.portfolio-slider-container');
+  const portfolioContents = document.querySelectorAll(".portfolio-grid[data-tab-content]");
 
-  if (tabs.length > 0 && portfolioGrids.length > 0) {
-    tabs.forEach((tab) => {
-      tab.addEventListener("click", () => {
-        const target = tab.dataset.tabTarget;
-        tabs.forEach((t) => t.classList.remove("active"));
-        portfolioGrids.forEach((grid) => (grid.style.display = "none"));
-        tab.classList.add("active");
-        const activeGrid = document.querySelector(`.portfolio-grid[data-tab-content="${target}"]`);
-        if (activeGrid) {
-          activeGrid.style.display = "flex";
+  // Slider Logic
+  const slider = document.querySelector('.portfolio-grid.slider');
+  
+  if (slider) {
+      const prevBtn = document.querySelector('.slider-arrow.prev');
+      const nextBtn = document.querySelector('.slider-arrow.next');
+      const cards = slider.querySelectorAll('.watch-card-link');
+      const totalCards = cards.length;
+      let cardsVisible = 3; // Default for desktop
+      
+      const updateCardsVisible = () => {
+        if (window.innerWidth <= 1200) {
+            cardsVisible = 1; // On mobile/tablet view, we scroll one card at a time
+        } else {
+            cardsVisible = 3;
         }
-      });
-    });
+      };
+      updateCardsVisible();
+
+
+      let currentIndex = 0;
+
+      if (totalCards <= cardsVisible) {
+        if(prevBtn) prevBtn.classList.add('hidden');
+        if(nextBtn) nextBtn.classList.add('hidden');
+      }
+
+      const updateSlider = () => {
+          if (cards.length === 0) return;
+          
+          updateCardsVisible();
+
+          const cardWidth = cards[0].offsetWidth;
+          const gap = parseInt(window.getComputedStyle(slider).gap, 10) || 32; // 2rem fallback
+          const moveDistance = (cardWidth + gap) * currentIndex;
+          
+          slider.style.transform = `translateX(-${moveDistance}px)`;
+
+          if(prevBtn) prevBtn.classList.toggle('hidden', currentIndex === 0);
+          if(nextBtn) nextBtn.classList.toggle('hidden', currentIndex >= totalCards - cardsVisible);
+      };
+      
+      if(nextBtn) {
+        nextBtn.addEventListener('click', () => {
+            if (currentIndex < totalCards - cardsVisible) {
+                currentIndex++;
+                updateSlider();
+            }
+        });
+      }
+
+      if(prevBtn) {
+        prevBtn.addEventListener('click', () => {
+            if (currentIndex > 0) {
+                currentIndex--;
+                updateSlider();
+            }
+        });
+      }
+      
+      updateSlider(); 
+      window.addEventListener('resize', updateSlider);
   }
+
+  // Tab Logic
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      const targetId = tab.getAttribute('data-tab-target');
+      
+      tabs.forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+
+      portfolioContents.forEach(content => {
+          if (content.closest('.portfolio-slider-container')) {
+              if(sliderContainer) sliderContainer.style.display = 'none';
+          } else {
+              content.style.display = 'none';
+          }
+      });
+      
+      if (targetId === 'current') {
+        if(sliderContainer) sliderContainer.style.display = 'block';
+      } else {
+        const targetContent = document.querySelector(`.portfolio-grid[data-tab-content="${targetId}"]`);
+        if (targetContent) {
+            targetContent.style.display = 'flex';
+        }
+      }
+    });
+  });
+
 
   // --- 3. Back to Top Button ---
   const backToTopButton = document.createElement("button");
@@ -70,8 +147,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const detailGallery = document.querySelector(".detail-gallery");
   if (detailGallery) {
     const galleryImages = Array.from(detailGallery.querySelectorAll("img"));
-    let currentIndex = 0;
-
+    if (galleryImages.length === 0) return;
+    
+    let currentLightboxIndex = 0;
     const lightbox = document.createElement("div");
     lightbox.className = "lightbox-overlay";
     lightbox.innerHTML = `
@@ -83,7 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
     `;
     document.body.appendChild(lightbox);
     
-    const lightboxContent = lightbox.querySelector(".lightbox-content");
     const lightboxImage = lightbox.querySelector("img");
     const lightboxClose = lightbox.querySelector(".lightbox-close");
     const lightboxPrev = lightbox.querySelector(".lightbox-prev");
@@ -91,37 +168,25 @@ document.addEventListener('DOMContentLoaded', () => {
     const lightboxCounter = lightbox.querySelector(".lightbox-counter");
 
     function showLightbox(index) {
-      currentIndex = index;
-      const img = galleryImages[index];
-      
-      lightboxContent.scrollTop = 0;
-      lightboxContent.scrollLeft = 0;
-      lightboxImage.src = img.src;
+      currentLightboxIndex = index;
+      lightboxImage.src = galleryImages[index].src;
       lightboxCounter.textContent = `${index + 1} / ${galleryImages.length}`;
-      
-      (index === 0) ? lightboxPrev.classList.add("hidden") : lightboxPrev.classList.remove("hidden");
-      (index === galleryImages.length - 1) ? lightboxNext.classList.add("hidden") : lightboxNext.classList.remove("hidden");
-      
+      lightboxPrev.classList.toggle("hidden", index === 0);
+      lightboxNext.classList.toggle("hidden", index === galleryImages.length - 1);
       lightbox.classList.add("visible");
       document.body.classList.add("lightbox-active");
     }
-
-    galleryImages.forEach((image, index) => {
-      image.addEventListener("click", () => showLightbox(index));
-    });
-
     const closeLightbox = () => {
       lightbox.classList.remove("visible");
       document.body.classList.remove("lightbox-active");
     };
-
-    const showPrev = () => { if (currentIndex > 0) showLightbox(currentIndex - 1); };
-    const showNext = () => { if (currentIndex < galleryImages.length - 1) showLightbox(currentIndex + 1); };
+    const showPrev = () => { if (currentLightboxIndex > 0) showLightbox(currentLightboxIndex - 1); };
+    const showNext = () => { if (currentLightboxIndex < galleryImages.length - 1) showLightbox(currentLightboxIndex + 1); };
     
-    lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target === lightboxClose) closeLightbox(); });
+    galleryImages.forEach((image, index) => image.addEventListener("click", () => showLightbox(index)));
+    lightbox.addEventListener("click", (e) => { if (e.target === lightbox || e.target === lightboxClose || e.target.closest('.lightbox-close')) closeLightbox(); });
     lightboxPrev.addEventListener("click", (e) => { e.stopPropagation(); showPrev(); });
     lightboxNext.addEventListener("click", (e) => { e.stopPropagation(); showNext(); });
-
     document.addEventListener("keydown", (e) => {
       if (lightbox.classList.contains("visible")) {
         if (e.key === "Escape") closeLightbox();
@@ -132,39 +197,27 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   
   // --- 6. Contact Form ---
-  const contactForm = document.getElementById("contact-form");
-  if (contactForm) {
-    contactForm.addEventListener("submit", function (e) {
-      e.preventDefault();
-      const formData = new FormData(this);
-      const messageDiv = document.createElement("div");
-
-      fetch(this.action, {
-        method: "POST",
-        body: formData,
-        headers: {
-          Accept: "application/json",
-        },
-      })
-      .then((response) => {
-        if (response.ok) {
-          messageDiv.textContent = "Thank you for your message!";
-          messageDiv.className = "form-success";
-          contactForm.reset();
-        } else {
-          messageDiv.textContent = "Oops! There was a problem submitting your form";
-          messageDiv.className = "form-error";
-        }
-        contactForm.appendChild(messageDiv);
-        setTimeout(() => messageDiv.remove(), 5000);
-      })
-      .catch(() => {
-        messageDiv.textContent = "Oops! There was a problem submitting your form";
-        messageDiv.className = "form-error";
-        contactForm.appendChild(messageDiv);
-        setTimeout(() => messageDiv.remove(), 5000);
-      });
+  const contactForms = document.querySelectorAll(".contact-form form");
+  if (contactForms.length > 0) {
+    contactForms.forEach(contactForm => {
+        contactForm.addEventListener("submit", function (e) {
+          e.preventDefault();
+          const formData = new FormData(this);
+          const existingMessage = contactForm.querySelector('.form-success, .form-error');
+          if (existingMessage) existingMessage.remove();
+    
+          const messageDiv = document.createElement("div");
+    
+          // Placeholder for Formspree/other service
+          // Simulating a success response for demonstration
+          setTimeout(() => {
+              messageDiv.textContent = "Thank you for your message!";
+              messageDiv.className = "form-success";
+              contactForm.reset();
+              contactForm.appendChild(messageDiv);
+              setTimeout(() => messageDiv.remove(), 5000);
+          }, 1000);
+        });
     });
   }
-
 });
